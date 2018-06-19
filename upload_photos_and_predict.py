@@ -20,40 +20,62 @@ IMAGE_PATH = "static/img/"
 
 app = Flask(__name__)
 
+
 photos = UploadSet('photos', IMAGES)
 app.config['UPLOADED_PHOTOS_DEST'] = IMAGE_PATH
 configure_uploads(app, photos)
 
 @app.route('/', methods=['GET'])
-def home(): 
+def home(error = ""): 
     photo_name = 'dog_picture.jpg'
     predictions = make_predictions_api(photo_name)
-    top_class = get_top_class(predictions)
-    script,div = make_predictions_visual(predictions)
+    if predictions is not None:
+        top_class = get_top_class(predictions)
+        script,div = make_predictions_visual(predictions)
+    else:
+        predictions = []
+        top_class = None
+        script,div = None, None
+    
+    
     return render_template('upload_form.html', 
                            photo_name = photo_name,
                            predictions = predictions,
                            prediction_result = "prediction.png",
                            top_class = top_class,
                            script = script,
-                           div = div)
+                           div = div,
+                           error = error)
 
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    """Make predict and returns the result with the visual embedded"""
-    if request.method == 'POST' and 'photo' in request.files:
-        filename = photos.save(request.files['photo'])
-        predictions = make_predictions_api(filename)
-        top_class = get_top_class(predictions)
-        script,div = make_predictions_visual(predictions)
-        return render_template('upload_form.html',
-                               photo_name = filename,
-                               predictions = predictions,
-                               prediction_result = "prediction.png",
-                               top_class = top_class,
-                               script = script,
-                               div = div)
+    try:
+        
+        """Make predict and returns the result with the visual embedded"""
+        if request.method == 'POST' and 'photo' in request.files:
+            filename = photos.save(request.files['photo'])
+            predictions = make_predictions_api(filename)
+            if predictions is not None:
+                top_class = get_top_class(predictions)
+                script,div = make_predictions_visual(predictions)
+            else:
+                predictions = []
+                top_class = None
+                script,div = None, None
+            return render_template('upload_form.html',
+                                   photo_name = filename,
+                                   predictions = predictions,
+                                   prediction_result = "prediction.png",
+                                   top_class = top_class,
+                                   script = script,
+                                   div = div)
+        else:
+            return home("Please upload image of your dog")
+    except Exception as error:
+        print(error)
+        return home("Please upload jpeg image of your dog")
+       
     
     
 
@@ -67,8 +89,7 @@ def make_predictions_visual(predictions):
     
     labels = df['label'].values
     sizes = df['probability'].values
-      
-    
+          
     p = figure(x_range = labels, plot_height = 350,
                title = "Confidence over dog breeds",
                tools = "", toolbar_location = None)
@@ -101,24 +122,23 @@ def make_predictions_api(filename):
     # image path
     image_path = IMAGE_PATH + filename
 
-    # load the input image and construct the payload for the request
-    image = open(image_path, "rb").read()
-    payload = {"image": image}
+    try:
+        # load the input image and construct the payload for the request
+        image = open(image_path, "rb").read()
+        payload = {"image": image}
+        # submit the API request
+        r = requests.post(KERAS_REST_API_URL, files=payload).json()
+        if r["success"]:
+            result = r['predictions']
     
-    # submit the request
-    r = requests.post(KERAS_REST_API_URL, files=payload).json()
-    
-    result = ""
-    # ensure the request was successful
-    if r["success"]:
-        result = r['predictions']
-    # otherwise, the request failed
-    else:
+    except Exception as error:
+        print(error)
         result = None
-        
-    return result
+    
+    finally:
+        return result
     
     
 if __name__ == '__main__':
-    app.run(port = 5001,
+    app.run(port = 80,
             debug=True)

@@ -9,13 +9,10 @@
 	    rel="stylesheet" type="text/css">
 	<script src="http://cdn.pydata.org/bokeh/release/bokeh-0.12.13.min.js"></script>
 	<script src="http://cdn.pydata.org/bokeh/release/bokeh-widgets-0.12.13.min.js"></script>
-
+    
+    <link rel="shortcut icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
 
     <style type="text/css">
-    	#body{
-    		margin: auto;
-    	}
-
     	#dog_picture{
 		    height: auto; 
 		    width: auto; 
@@ -34,23 +31,27 @@
 			float:left;
 		}
 		#header{
-			text-align: center;
+			text-align: left;
 			margin-bottom: 30px;
 			margin-top: 20px;
 		}
+		
+
     </style>
 </head>
 <body>
 	
-	<h1 id="header">Find out your dog's breed</h1>
+	<h1 id="header">Find out your dog's breed using Pre-trained ResNet50 </h1>
 
 	<div id="instruction_block">
 		<div id="submit_block">
-			<h4>Enter Your dog's Jpeg Image</h4>
+			<h3>Enter Your dog's Jpeg Image</h3>
+			<p style="color:red;">{{error}}</p>
 			<form method=POST enctype=multipart/form-data action="{{ url_for('predict') }}">
 			    <input type=file name=photo>
 			    <input type="submit">
 			</form>
+			<p></p>
 		</div>	
 
 		<div id="dog_image">
@@ -58,16 +59,10 @@
 		</div>
 	</div>
 	<dir id="predictions">
-		<h4>Your dog's breed is: <i>{{top_class}}</i></h4>
-		<!--
-		{% for i in predictions %}
-			<p><b>{{i['label']}}</b>: {{i["probability"]}}</p>
-		{% endfor %}
-		*/
-		-->
-	{{script | safe}}
-	{{div | safe}}
-			
+		<h3>Your dog's breed is: <i>{{top_class}}</i></h3>
+    	{{script | safe}}
+    	{{div | safe}}
 	</dir>
+	
 </body>
 </html>
