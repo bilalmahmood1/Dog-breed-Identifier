@@ -1,0 +1,73 @@
+<html>
+<head>
+    <title>What is my Breed?</title>
+    <link
+    href="http://cdn.pydata.org/bokeh/release/bokeh-0.12.13.min.css"
+    rel="stylesheet" type="text/css">
+	<link
+	    href="http://cdn.pydata.org/bokeh/release/bokeh-widgets-0.12.13.min.css"
+	    rel="stylesheet" type="text/css">
+	<script src="http://cdn.pydata.org/bokeh/release/bokeh-0.12.13.min.js"></script>
+	<script src="http://cdn.pydata.org/bokeh/release/bokeh-widgets-0.12.13.min.js"></script>
+
+
+    <style type="text/css">
+    	#body{
+    		margin: auto;
+    	}
+
+    	#dog_picture{
+		    height: auto; 
+		    width: auto; 
+		    max-width: 500px; 
+		    max-height: 500px;   
+		}
+		#predictions{
+			float:left;
+			width: 30%;
+			margin: 0;
+		}
+		
+		#instruction_block{
+			width: 50%;
+			margin: 0;
+			float:left;
+		}
+		#header{
+			text-align: center;
+			margin-bottom: 30px;
+			margin-top: 20px;
+		}
+    </style>
+</head>
+<body>
+	
+	<h1 id="header">Find out your dog's breed</h1>
+
+	<div id="instruction_block">
+		<div id="submit_block">
+			<h4>Enter Your dog's Jpeg Image</h4>
+			<form method=POST enctype=multipart/form-data action="{{ url_for('predict') }}">
+			    <input type=file name=photo>
+			    <input type="submit">
+			</form>
+		</div>	
+
+		<div id="dog_image">
+			<img id="dog_picture" src="{{url_for('static', filename='img/' + photo_name)}}"/>
+		</div>
+	</div>
+	<dir id="predictions">
+		<h4>Your dog's breed is: <i>{{top_class}}</i></h4>
+		<!--
+		{% for i in predictions %}
+			<p><b>{{i['label']}}</b>: {{i["probability"]}}</p>
+		{% endfor %}
+		*/
+		-->
+	{{script | safe}}
+	{{div | safe}}
+			
+	</dir>
+</body>
+</html>
