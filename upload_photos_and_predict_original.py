@@ -1,31 +1,26 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-""" Combined App using uploading and prediction @author: bilal """
+"""
+Make a simple web page that predicts dog breed
+@author: bilal
+"""
 
 
-# import the necessary packages
 from flask import Flask, render_template, request
 from flask_uploads import UploadSet, configure_uploads, IMAGES
+import requests
 import pandas as pd
 from bokeh.palettes import Reds5
 from bokeh.plotting import figure
 from bokeh.embed import components
-from keras.applications import ResNet50
-from keras.preprocessing.image import img_to_array
-from keras.applications import imagenet_utils
-from PIL import Image
-import numpy as np
 import os
 
-
+KERAS_REST_API_URL = "35.200.244.216/predict"
 IMAGE_PATH = os.path.join("/var/www/html/Dog-breed-Identifier","static/img/")
 
-#model = None
-
-global model
-model = ResNet50(weights="imagenet")
 
 app = Flask(__name__)
+
 
 photos = UploadSet('photos', IMAGES)
 app.config['UPLOADED_PHOTOS_DEST'] = IMAGE_PATH
@@ -52,6 +47,7 @@ def home(error = ""):
                            script = script,
                            div = div,
                            error = error)
+
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -120,61 +116,31 @@ def get_top_class(predictions):
     return df['label'].iloc[0]
 
 
-
-def load_model():
-    """load the pre-trained Keras model (here we are using a model"""
-    global model
-    model = ResNet50(weights="imagenet")
-        
-def prepare_image(image, target):
-    """Preparing image for inputting into Neural network"""
-    # if the image mode is not RGB, convert it
-    if image.mode != "RGB":
-        image = image.convert("RGB")
-
-    # resize the input image and preprocess it
-    image = image.resize(target)
-    image = img_to_array(image)
-    image = np.expand_dims(image, axis=0)
-    image = imagenet_utils.preprocess_input(image)
-
-    # return the processed image
-    return image
-
 def make_predictions_api(filename):
-    """Make predictions on the uploaded image"""
-    data = None
+    """Make predicts on each uploaded file by making an API call to the 
+    server with the deep learning model loaded"""
+    # initialize the Keras REST API endpoint URL along with the input
+    # image path
+
+    image_path = IMAGE_PATH + filename
+    image_path = os.path.join(os.getcwd(), image_path)
     try:
-        ## loading uploaded image
-        image_path = IMAGE_PATH + filename
-        image = Image.open(open(image_path,'rb'))
-    
-        # preprocess the image and prepare it for classification
-        image = prepare_image(image, target=(224, 224))
-    
-        # classify the input image and then initialize the list
-        # of predictions to return to the client
-        preds = model.predict(image)
-        results = imagenet_utils.decode_predictions(preds)
-        data = []
-    
-        # loop over the results and add them to the list of
-        # returned predictions
-        for (imagenetID, label, prob) in results[0]:
-            r = {"label": label, "probability": float(prob)}
-            data.append(r)
-    
-        return data['predictions']
+        # load the input image and construct the payload for the request
+        image = open(image_path, "rb").read()
+        payload = {"image": image}
+        # submit the API request
+        r = requests.post(KERAS_REST_API_URL, files=payload).json()
+        if r["success"]:
+            result = r['predictions']
     
     except Exception as error:
         print(error)
-        return data
-   
+        result = None
     
-
-#print('Loading pretrained model')
-#load_model()
-#print('Model Loaded and application is running')
-#app.run(port=80, debug=True)    
+    finally:
+        return result
     
     
+if __name__ == '__main__':
+    app.run(port = 80,
+            debug=True)
