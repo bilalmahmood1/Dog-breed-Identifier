@@ -12,6 +12,6 @@ Sources:
 
 
 <p align="center">
-  <img src="demo_image.png" width="350"/>
+  <img src="demo_image.png" width="600"/>
 </p>
 
